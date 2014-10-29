@@ -1,42 +1,28 @@
 #include "ofApp.h"
-//Player1 variables
-float player1Radius;
-float XposPlayer1;
-float YposPlayer1;
-float X1Loaction;
-float Y1Loaction; 
-// weapon player 1 position
-float XposWeapon1;
-float YposWeapon1;
-bool player1Up, player1Down, player1Left,player1Right;
-bool player2Up, player2Down, player2Left, player2Right;
-
-float XposPlayer2;
-float YposPlayer2;
-float X2Loaction;
-float Y2Loaction; 
-// weapon player 1 position
-float XposWeapon2;
-float YposWeapon2;
-
-float retreat;
-int scorePlayer1;
-int scorePlayer2;
-int bounce;
-bool hasLostGame;
-
-float playerSpeed;
-float Yspeed;
-float Xspeed;
-float WeaponSpeedX; //speed of the moving weapon
-float WeaponSpeedY;
-float WeaponRadius; // radius of the weapon
 
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-	WeaponRadius = 20;
-	player1Radius = 30;
+	//images
+	weapon.loadImage("weapon_01.png");
+	//player images
+	player1.loadImage("player1.png");
+	player2.loadImage("player2.png");
+	//sounds
+	Hit.loadSound("Hit.mp3");
+	Hit.setVolume(0.02);
+	backgroundSound.loadSound("background.mp3");
+	backgroundSound.setLoop(true);
+	//fonts
+	Font.loadFont("Comenia Sans.otf", 12);
+	//make the connection
+	myArduino.connect("COM4",57600);
+	//to see if the arduino has been setup.
+	bSetupArduino = false;
+
+	//gamecode
+	WeaponRadius = 30;
+	playerRadius = 30;
 	//player1 start pos
 	XposPlayer1=500;
 	YposPlayer1=500;
@@ -50,11 +36,12 @@ void ofApp::setup(){
 	YposWeapon2 =400;
 	XposWeapon2=200;
 	//starting speed weapons
-	Xspeed=0;
-	Yspeed=0;
+	Xspeed1=0;
+	Yspeed1=0;
 	//playerspeed
-	playerSpeed=0.8;
+	playerSpeed=0.5;
 	//player1 activated direction
+	player1Atteck=false;
 	player1Up=false;
 	player1Down=false;
 	player1Left=false;
@@ -62,19 +49,59 @@ void ofApp::setup(){
 	//player2 activated direction
 	player2Up=false;
 	player2Left=false;
-	bounce = 0;
+	bounce1 = 0;
+	bounce2= 0;
 	//the distance to trigger the weapon
 	retreat = 350;
 	hasLostGame = false;
+	//weapon 1 speed
+	Weapon1SpeedX=0;
+	Weapon1SpeedY=0;
+	//weapon 2 speed
+	Weapon2SpeedX=0;
+	Weapon2SpeedY=0;
+	//check if the player is hit by the weapon
+	player1Hit=false;
+	player2Hit=false;
+	//playerscore
 	scorePlayer1 = 0;
 	scorePlayer2 = 0;
+	Hitvalue2=0;
 	ofSetVerticalSync(true);
+
+	backgroundSound.play();
+}
+
+void ofApp::updateArduino(){
+	//a call to update the arduino data ins and outs
+	myArduino.update();
+}
+//this will setup all of my arduino pins. Difine the in and output of the arduino.
+void ofApp::setupArduino(){
+	myArduino.sendDigitalPinMode(9, ARD_OUTPUT); //output pin 9
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
 	//all math stuff
+	
+	//first step
+	//if my arduino is ready ---> its a must to make openframworks to run with the arduino
+	if(myArduino.isArduinoReady()){
+		//when bsetupArduino is false it will run the setupArdiono to define the in and output of the arduiono
+		if(bSetupArduino==false){
+			setupArduino();
+	//		we started running arduino, so no need to start setup again. 
+			bSetupArduino=true;
+		}
+		//2nd run the update
+		updateArduino();
+	}
+
+
 	if(hasLostGame==false){
+		//playbackgrondsound
+		
 	 //player1 direction
 	  if(player1Up==true){//up
 		  YposPlayer1 +=playerSpeed;
@@ -117,180 +144,86 @@ void ofApp::update(){
 	  }else{
 		  XposPlayer1 +=0;
 	  }
+	  pullToPlayer();
 
-		//sees when the player2 is to far away
-		if(ofDist(XposPlayer1,YposPlayer1,XposWeapon1,YposWeapon1)>retreat){
-			bounce ++;
-			//give the X and Y posistion of the player2
-		for(int i=0; i<bounce; i++){
-			X1Loaction=XposPlayer1;
-			Y1Loaction=YposPlayer1;
-			}
-		}
-		// if c>0 c/a=x, if c<0 c/b=x  x=position of the player2 can be X or Y
-	    //c          a       b   
-		Xspeed =X1Loaction-XposWeapon1;
-		Yspeed= Y1Loaction-YposWeapon1;
+		if(ofDist(XposPlayer1,YposPlayer1,XposWeapon2,YposWeapon2) < playerRadius+WeaponRadius){
+			player2Hit=true;
+			Hitvalue2++;
+			if(player2Hit==true && Hitvalue2==1){
+			scorePlayer2++;
+			Hit.play();
 			
-		if(Xspeed<0){
-			WeaponSpeedX =Xspeed/XposWeapon1;
-		}else{
-			WeaponSpeedX= Xspeed/X1Loaction;
-		}
-
-		if(Xspeed<0){
-			WeaponSpeedY =Yspeed/YposWeapon1;
-		}else{
-			WeaponSpeedY= Yspeed/Y1Loaction;
-				}
-		//give the speed to the weapon
-		XposWeapon1 += WeaponSpeedX*2;
-		YposWeapon1 += WeaponSpeedY*2;
-	
-		// player1 cant leave the playfield
-		if(XposWeapon1<0){
-			XposWeapon1=0+WeaponRadius;
-		}
-		if(XposWeapon1 > ofGetWidth()){
-			XposWeapon1=ofGetWidth()-WeaponRadius;
-		}
-		if(YposWeapon1<0){
-			YposWeapon1=0+WeaponRadius;	;
-		}
-		if(YposWeapon1 > ofGetHeight()){
-			YposWeapon1=ofGetHeight()-WeaponRadius;
-		}
-
-		if(YposPlayer1<0){
-			YposPlayer1=ofGetHeight()-player1Radius;	;
-		}
-		if(YposPlayer1 > ofGetHeight()){
-			YposPlayer1=0+player1Radius;
-		}
-		if(XposPlayer1<0){
-			XposPlayer1=ofGetWidth()-player1Radius;	;
-		}
-		if(XposPlayer1 > ofGetWidth()){
-			XposPlayer1=0+player1Radius;
-		}
-
-	//sees when the player2 is to far away
-		if(ofDist(XposPlayer2,YposPlayer2,XposWeapon2,YposWeapon2)>retreat){
-			bounce ++;
-			//give the X and Y posistion of the player2
-			for(int i=0; i<bounce; i++){
-				X2Loaction=XposPlayer2;
-				Y2Loaction=YposPlayer2;
 			}
-  
-		}
-	    // if c>0 c/a=x, if c<0 c/b=x  x=position of the player can be X or Y
-	    //c          a       b   
-		Xspeed =X2Loaction-XposWeapon2;
-		Yspeed= Y2Loaction-YposWeapon2;
-			
-		if(Xspeed<0){
-			WeaponSpeedX =Xspeed/XposWeapon2;
 		}else{
-			WeaponSpeedX= Xspeed/X2Loaction;
+			player2Hit=false;
+			Hitvalue2=0;
 		}
-
-		if(Xspeed<0){
-			WeaponSpeedY =Yspeed/YposWeapon2;
-		}else{
-			WeaponSpeedY= Yspeed/Y2Loaction;
-		}
-		//give the speed to the weapon
-		XposWeapon2 += WeaponSpeedX*2;
-		YposWeapon2 += WeaponSpeedY*2;
 		
-		//make sure the player doesnt fall of the screen
-		if(XposWeapon2 < 0){
-		XposWeapon2=0+WeaponRadius;
-		}
-		if(XposWeapon2 > ofGetWidth()){
-		XposWeapon2=ofGetWidth()-WeaponRadius;
-		}
-		if(YposWeapon2<0){
-		YposWeapon2=0+WeaponRadius;	;
-		}
-		if(YposWeapon2 > ofGetHeight()){
-		YposWeapon2=ofGetHeight()-WeaponRadius;
-		}
+		
 
-		if(YposPlayer2<0){
-		YposPlayer2=ofGetHeight()-player1Radius;	;
-		}
-		if(YposPlayer2 > ofGetHeight()){
-		YposPlayer2=0+player1Radius;
-		}
-		if(XposPlayer2<0){
-			XposPlayer2=ofGetWidth()-player1Radius;	;
-		}
-		if(XposPlayer2 > ofGetWidth()){
-			XposPlayer2=0+player1Radius;
-		}
-	
-		//makes sure player can't go through eachother.
-		if(ofDist(XposPlayer1,YposPlayer1,XposPlayer2,YposPlayer2)<=player1Radius+player1Radius){
-		//checks where the players X are to make sure they bounce in the right direction.
-			if(XposPlayer1>XposPlayer2){
-			XposPlayer1=XposPlayer1+2;
-			YposPlayer1=YposPlayer1+2;
-			XposPlayer2=XposPlayer2-2;
-			YposPlayer2=YposPlayer2-2;
-			}else{
-			XposPlayer1=XposPlayer1-2;
-			YposPlayer1=YposPlayer1-2;
-			XposPlayer2=XposPlayer2+2;
-			YposPlayer2=YposPlayer2+2;
-			}
-		}
-
-		if(ofDist(XposPlayer1,YposPlayer1,XposWeapon2,YposWeapon2) < player1Radius+WeaponRadius){
-		scorePlayer2++;
-			}
-			if(ofDist(XposPlayer2,YposPlayer2,XposWeapon1,YposWeapon1) < player1Radius+WeaponRadius){
+		if(ofDist(XposPlayer2,YposPlayer2,XposWeapon1,YposWeapon1) < playerRadius+WeaponRadius){
+			player1Hit=true;
+			Hitvalue1++;
+			if(player1Hit==true && Hitvalue1==1){
 			scorePlayer1++;
+			Hit.play();
+			
 			}
-			if(scorePlayer1>=1000 || scorePlayer2==1000){
-				hasLostGame=true;
-			}
+		}else{
+			player1Hit=false;
+			Hitvalue1=0;
+		}
+		if(scorePlayer1>=5 || scorePlayer2==5){
+			hasLostGame=true;
+		}
 	}
 }
 
 
 //--------------------------------------------------------------
 void ofApp::draw(){
+
+	//turn th 9th pin on the arduino on
+	if(hasLostGame==false){
+
+		myArduino.sendDigital(7, ARD_HIGH);
+	   myArduino.sendDigital(9, ARD_LOW);
+	   
+	   
 	ofBackground(0,0,0);
-	//this is the weapon player 1
-	ofSetColor(255,0,0);
-	ofCircle(XposWeapon1,YposWeapon1,WeaponRadius);
+
+	//playerlines
+	   ofSetColor(255,0,0);
 	ofLine(XposPlayer1,YposPlayer1,XposWeapon1,YposWeapon1);
-	//this is the player1
-	ofSetColor(0,0,255);
-	ofCircle(XposPlayer1,YposPlayer1, player1Radius);
-	ofSetColor(255,255,255);
-	
-	//this is the weapon player 2
-	ofSetColor(255,0,0);
-	ofCircle(XposWeapon2,YposWeapon2,WeaponRadius);
 	ofLine(XposPlayer2,YposPlayer2,XposWeapon2,YposWeapon2);
+	//this is the weapon player 1
+	ofSetColor(255,255,255);
+	weapon.draw(XposWeapon1-WeaponRadius,YposWeapon1-WeaponRadius);
+	//this is the player1
+	player1.draw(XposPlayer1-playerRadius,YposPlayer1-playerRadius);
+	//this is the weapon player 2
+	weapon.draw(XposWeapon2-WeaponRadius,YposWeapon2-WeaponRadius);
 	//this is the player2
-	ofSetColor(0,255,0);
-	ofCircle(XposPlayer2,YposPlayer2, player1Radius);
+	player2.draw(XposPlayer2-playerRadius,YposPlayer2-playerRadius);
 	ofSetColor(255,255,255);
 
+
+
 	//show score players
-	ofDrawBitmapString("Score Player 1 : "+ofToString(scorePlayer1), 20, 20);
-	ofDrawBitmapString("\nScore Player 2 : "+ofToString(scorePlayer2), 20, 20);
+	Font.drawString("Score Player 1 : "+ofToString(scorePlayer1), 20, 20);
+	Font.drawString("\nScore Player 2 : "+ofToString(scorePlayer2), 20, 20);
+	}
 	//when game is over display score and option to restart
 	if(hasLostGame){
+		//turn of the led off
+		myArduino.sendDigital(9, ARD_HIGH);
+		myArduino.sendDigital(7, ARD_LOW);
+
 		ofSetColor(255,0,0);
 		ofBackground(0,0,0);
-	ofDrawBitmapString("Score Player 1 : "+ofToString(scorePlayer1),ofGetWidth()/2-200,ofGetHeight()/2);
-	ofDrawBitmapString("\nScore Player 2 : "+ofToString(scorePlayer2),ofGetWidth()/2-200,ofGetHeight()/2);
-		ofDrawBitmapString("\nGame over! Press any Space to restart", ofGetWidth()/2-200,ofGetHeight()/2+20);
+	Font.drawString("Score Player 1 : "+ofToString(scorePlayer1),ofGetWidth()/2-200,ofGetHeight()/2);
+	Font.drawString("\nScore Player 2 : "+ofToString(scorePlayer2),ofGetWidth()/2-200,ofGetHeight()/2);
+		Font.drawString("\nGame over! Press any Space to restart", ofGetWidth()/2-200,ofGetHeight()/2+20);
 	}
 }
 
@@ -387,8 +320,146 @@ void ofApp::keyReleased(int key){
 		YposWeapon2 =400;
 		XposWeapon2=200;
 		}
-		cout<<key;
+	
 }
+
+
+//the math to make sure the player pulls the weapon
+void ofApp::pullToPlayer(){
+	//------------------------------------------------------------ player1------------------------------//
+	//sees when the player1 is to far away
+		if(ofDist(XposPlayer1,YposPlayer1,XposWeapon1,YposWeapon1)>retreat){
+			bounce1 ++;
+			//give the X and Y posistion of the player2
+		for(int i=0; i<bounce1; i++){
+			X1Loaction=XposPlayer1;
+			Y1Loaction=YposPlayer1;
+			}
+		}
+		// if c>0 c/a=x, if c<0 c/b=x  x=position of the player2 can be X or Y
+	    //c          a       b   
+		Xspeed1 = X1Loaction-XposWeapon1;
+		Yspeed1 = Y1Loaction-YposWeapon1;
+			
+		if(Xspeed1<0){
+			Weapon1SpeedX =0+Xspeed1/XposWeapon1;
+		}else{
+			Weapon1SpeedX=Xspeed1/X1Loaction;
+		}
+
+		if(Yspeed1<0){
+			Weapon1SpeedY =0+Yspeed1/YposWeapon1;
+		}else{
+			Weapon1SpeedY= Yspeed1/Y1Loaction;
+				}
+
+
+		//give the speed to the weapon
+		XposWeapon1 += Weapon1SpeedX*2;
+		YposWeapon1 += Weapon1SpeedY*2;
+
+		
+		// player1 cant leave the playfield
+		if(XposWeapon1<0){
+			XposWeapon1=0+WeaponRadius;
+		}
+		if(XposWeapon1 > ofGetWidth()){
+			XposWeapon1=ofGetWidth()-WeaponRadius;
+		}
+		if(YposWeapon1<0){
+			YposWeapon1=0+WeaponRadius;	;
+		}
+		if(YposWeapon1 > ofGetHeight()){
+			YposWeapon1=ofGetHeight()-WeaponRadius;
+		}
+		//player spawn on the other side of the screen
+		if(YposPlayer1<0){
+			YposPlayer1=ofGetHeight()-playerRadius;	;
+		}
+		if(YposPlayer1 > ofGetHeight()){
+			YposPlayer1=0+playerRadius;
+		}
+		if(XposPlayer1<0){
+			XposPlayer1=ofGetWidth()-playerRadius;	;
+		}
+		if(XposPlayer1 > ofGetWidth()){
+			XposPlayer1=0+playerRadius;
+		}
+		//------------------------------------------------- player 2 -----------------------------------------//
+	//sees when the player2 is to far away
+		if(ofDist(XposPlayer2,YposPlayer2,XposWeapon2,YposWeapon2)>retreat){
+			bounce2 ++;
+			//give the X and Y posistion of the player2
+			for(int i=0; i<bounce2; i++){
+				X2Loaction=XposPlayer2;
+				Y2Loaction=YposPlayer2;
+			}
+  
+		}
+	    // if c>0 c/a=x, if c<0 c/b=x  x=position of the player can be X or Y
+	    //c          a       b   
+		Xspeed2 =X2Loaction-XposWeapon2;
+		Yspeed2= Y2Loaction-YposWeapon2;
+			
+		if(Xspeed2<0){
+			Weapon2SpeedX =Xspeed2/XposWeapon2;
+		}else{
+			Weapon2SpeedX= Xspeed2/X2Loaction;
+		}
+
+		if(Yspeed2<0){
+			Weapon2SpeedY =Yspeed2/YposWeapon2;
+		}else{
+			Weapon2SpeedY= Yspeed2/Y2Loaction;
+		}
+		//give the speed to the weapon
+		XposWeapon2 += Weapon2SpeedX*2;
+		YposWeapon2 += Weapon2SpeedY*2;
+		
+		//make sure the weapon doesnt fall of the screen
+		if(XposWeapon2 < 0){
+		XposWeapon2=0+WeaponRadius;
+		}
+		if(XposWeapon2 > ofGetWidth()){
+		XposWeapon2=ofGetWidth()-WeaponRadius;
+		}
+		if(YposWeapon2<0){
+		YposWeapon2=0+WeaponRadius;	;
+		}
+		if(YposWeapon2 > ofGetHeight()){
+		YposWeapon2=ofGetHeight()-WeaponRadius;
+		}
+		//player can spawn on the other side.
+		if(YposPlayer2<0){
+		YposPlayer2=ofGetHeight()-playerRadius;	;
+		}
+		if(YposPlayer2 > ofGetHeight()){
+		YposPlayer2=0+playerRadius;
+		}
+		if(XposPlayer2<0){
+			XposPlayer2=ofGetWidth()-playerRadius;	;
+		}
+		if(XposPlayer2 > ofGetWidth()){
+			XposPlayer2=0+playerRadius;
+		}
+	
+		//makes sure player can't go through eachother.
+		if(ofDist(XposPlayer1,YposPlayer1,XposPlayer2,YposPlayer2)<=playerRadius+playerRadius){
+		//checks where the players X are to make sure they bounce in the right direction.
+			if(XposPlayer1>XposPlayer2){
+			XposPlayer1=XposPlayer1+2;
+			YposPlayer1=YposPlayer1+2;
+			XposPlayer2=XposPlayer2-2;
+			YposPlayer2=YposPlayer2-2;
+			}else{
+			XposPlayer1=XposPlayer1-2;
+			YposPlayer1=YposPlayer1-2;
+			XposPlayer2=XposPlayer2+2;
+			YposPlayer2=YposPlayer2+2;
+			}
+		}
+}
+
 
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y ){
