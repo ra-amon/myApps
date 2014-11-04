@@ -3,7 +3,19 @@
 #include "ofMain.h"
 #include <iostream>
 using namespace std;
-
+struct Player {
+	int playerRadius;
+	//location
+	int XposPlayer; 
+	int YposPlayer;
+	int XLoaction;
+	int YLoaction; 
+	//controls
+	bool up;
+	bool down;
+	bool left;
+	bool right;
+};
 class ofApp : public ofBaseApp{
 
 	public:
@@ -31,22 +43,12 @@ class ofApp : public ofBaseApp{
 		bool bSetupArduino;
 		
 		//variables for game
-		float playerRadius;
-		float XposPlayer1;
-		float YposPlayer1;
-		float X1Loaction;
-		float Y1Loaction; 
-		// weapon player 1 position
 		float XposWeapon1;
 		float YposWeapon1;
-		bool player1Atteck;
-		bool player1Up, player1Down, player1Left,player1Right;
-		bool player2Up, player2Down, player2Left, player2Right;
-
-		float XposPlayer2;
-		float YposPlayer2;
-		float X2Loaction;
-		float Y2Loaction; 
+		//float XposPlayer2;
+		//float YposPlayer2;
+		//float X2Loaction;
+		//float Y2Loaction; 
 		// weapon player 1 position
 		float XposWeapon2;
 		float YposWeapon2;
@@ -85,4 +87,6 @@ class ofApp : public ofBaseApp{
 		ofSerial serial; //allows for serial output 
 		//an arduino object
 		ofArduino myArduino;
+		//players
+		vector<Player>players; 
 };
