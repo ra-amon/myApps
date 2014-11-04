@@ -6,14 +6,18 @@ void ofApp::setup(){
 	for(int x = 0; x< 3; x++){
 		Player c;
 		c.playerRadius=30;
-		c.XposPlayer=ofRandom(ofGetWidth());
-		c.YposPlayer=ofRandom(ofGetHeight());
+		c.XposPlayer=ofRandom(ofGetWidth()); //spawn
+		c.YposPlayer=ofRandom(ofGetHeight()); //spawn
 		c.XLoaction;
 		c.YLoaction;
+		//controls
 		c.up=false;
 		c.down=false;
 		c.left=false;
 		c.right=false;
+		c.playerHit=false;// weapon hit
+		c.bounce=0; // makes players bounce of,off eatchother
+		c.playerScore=0; //player score
 		players.push_back(c);
 	}
 	//images
@@ -34,17 +38,9 @@ void ofApp::setup(){
 	bSetupArduino = false;
 	//gamecode
 	WeaponRadius = 30;
-	//playerradius = 30;
-	////player1 start pos
-	//players[1].XposPlayer=500;
-	//players[1].YposPlayer=500;
-
 	//posision player1 weapon
 	YposWeapon1 =300;
 	XposWeapon1=300;
-	//player2 start pos
-	//players[2].XposPlayer=600;
-	//players[2].YposPlayer=200;
 	//posision player2 weapon
 	YposWeapon2 =400;
 	XposWeapon2=200;
@@ -53,8 +49,6 @@ void ofApp::setup(){
 	Yspeed1=0;
 	//playerspeed
 	playerSpeed=0.8;
-	bounce1 = 0;
-	bounce2= 0;
 	//the distance to trigger the weapon
 	retreat = 350;
 	hasLostGame = false;
@@ -64,12 +58,6 @@ void ofApp::setup(){
 	//weapon 2 speed
 	Weapon2SpeedX=0;
 	Weapon2SpeedY=0;
-	//check if the player is hit by the weapon
-	player1Hit=false;
-	player2Hit=false;
-	//playerscore
-	scorePlayer1 = 0;
-	scorePlayer2 = 0;
 	Hitvalue2=0;
 	ofSetVerticalSync(true);
 	//playbackgrondsound
@@ -134,34 +122,34 @@ void ofApp::update(){
 	  pullToPlayer();
 	 // //player score counter. player 1
 		if(ofDist(players[1].XposPlayer,players[1].YposPlayer,XposWeapon2,YposWeapon2) < players[1].playerRadius+WeaponRadius){
-			player2Hit=true;
+			players[2].playerHit=true;
 			Hitvalue2++;
-			if(player2Hit==true && Hitvalue2==1){
-			scorePlayer2++;
+			if(players[2].playerHit==true && Hitvalue2==1){
+			players[2].playerScore++;
 			Hit.play();
 			
 			}
 		}else{
-			player2Hit=false;
+			players[2].playerHit=false;
 			Hitvalue2=0;
 		}
 		
 		
 		//player score 2
 		if(ofDist(players[2].XposPlayer,players[2].YposPlayer,XposWeapon1,YposWeapon1) < players[1].playerRadius+WeaponRadius){
-			player1Hit=true;
+			players[1].playerHit=true;
 			Hitvalue1++;  //counts up when true
-			if(player1Hit==true && Hitvalue1==1){ //when it is 1 score will go +1
-			scorePlayer1++;
+			if(players[1].playerHit==true && Hitvalue1==1){ //when it is 1 score will go +1
+			players[1].playerScore++;
 			Hit.play();
 			
 			}
 			//when false the counter will reset so when it hits again you add 1 to the score again.
 		}else{
-			player1Hit=false;
+			players[1].playerHit=false;
 			Hitvalue1=0;
 		}
-		if(scorePlayer1>=5 || scorePlayer2==5){
+		if(players[1].playerScore>=5 || players[2].playerScore==5){
 			hasLostGame=true;
 		}
 
@@ -205,8 +193,8 @@ void ofApp::draw(){
 
 
 	//show score players
-	Font.drawString("Score Player 1 : "+ofToString(scorePlayer1), 20, 20);
-	Font.drawString("\nScore Player 2 : "+ofToString(scorePlayer2), 20, 20);
+	Font.drawString("Score Player 1 : "+ofToString(players[1].playerScore), 20, 20);
+	Font.drawString("\nScore Player 2 : "+ofToString(players[2].playerScore), 20, 20);
 	}
 	//when game is over display score and option to restart
 	if(hasLostGame){
@@ -216,8 +204,8 @@ void ofApp::draw(){
 
 		ofSetColor(255,0,0);
 		ofBackground(0,0,0);
-	Font.drawString("Score Player 1 : "+ofToString(scorePlayer1),ofGetWidth()/2-200,ofGetHeight()/2);
-	Font.drawString("\nScore Player 2 : "+ofToString(scorePlayer2),ofGetWidth()/2-200,ofGetHeight()/2);
+	Font.drawString("Score Player 1 : "+ofToString(players[1].playerScore),ofGetWidth()/2-200,ofGetHeight()/2);
+	Font.drawString("\nScore Player 2 : "+ofToString(players[2].playerScore),ofGetWidth()/2-200,ofGetHeight()/2);
 		Font.drawString("\nGame over! Press any Space to restart", ofGetWidth()/2-200,ofGetHeight()/2+20);
 	}
 }
@@ -291,8 +279,8 @@ void ofApp::keyReleased(int key){
 		WeaponRadius =20;
 		ofBackground(255,0,0);
 		hasLostGame=false;
-		scorePlayer1 =0;
-		scorePlayer2=0;
+		players[1].playerScore =0;
+		players[2].playerScore=0;
 		players[1].XposPlayer=500;
 		players[1].YposPlayer=500;
 		//posision player1 weapon
@@ -315,9 +303,9 @@ void ofApp::pullToPlayer(){
 	//sees when the player1 is to far away
 	
 		if(ofDist(players[1].XposPlayer,players[1].YposPlayer,XposWeapon1,YposWeapon1)>retreat){
-			bounce1 ++;
+			players[1].bounce ++;
 			//give the X and Y posistion of the player2
-		for(int i=0; i<bounce1; i++){
+		for(int i=0; i<players[1].bounce; i++){
 			players[1].XLoaction=players[1].XposPlayer;
 			players[1].YLoaction=players[1].YposPlayer;
 			}
@@ -374,9 +362,9 @@ void ofApp::pullToPlayer(){
 		//------------------------------------------------- player 2 -----------------------------------------//
 	//sees when the player2 is to far away
 		if(ofDist(players[2].XposPlayer,players[2].YposPlayer,XposWeapon2,YposWeapon2)>retreat){
-			bounce2 ++;
+			players[2].bounce ++;
 			//give the X and Y posistion of the player2
-			for(int i=0; i<bounce2; i++){
+			for(int i=0; i<players[2].bounce; i++){
 				players[2].XLoaction=players[2].XposPlayer;
 				players[2].YLoaction=players[2].YposPlayer;
 			}

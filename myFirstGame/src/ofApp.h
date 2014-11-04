@@ -15,6 +15,9 @@ struct Player {
 	bool down;
 	bool left;
 	bool right;
+	bool playerHit;
+	int bounce;
+	int playerScore;
 };
 class ofApp : public ofBaseApp{
 
@@ -44,26 +47,14 @@ class ofApp : public ofBaseApp{
 		
 		//variables for game
 		float XposWeapon1;
-		float YposWeapon1;
-		//float XposPlayer2;
-		//float YposPlayer2;
-		//float X2Loaction;
-		//float Y2Loaction; 
+		float YposWeapon1; 
 		// weapon player 1 position
 		float XposWeapon2;
 		float YposWeapon2;
-
 		float retreat; //distance of the pullback
-		int scorePlayer1;
 		int Hitvalue1; //the variable that counts up when hit by the weapon
-		int scorePlayer2;
 		int Hitvalue2;//the variable that counts up when hit by the weapon
-		int bounce1;
-		int bounce2;
 		bool hasLostGame;
-		bool player1Hit;
-		bool player2Hit;
-
 		float playerSpeed;
 		//discance between the weapon and the player
 		float Yspeed1, Yspeed2;
