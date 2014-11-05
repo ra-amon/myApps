@@ -5,19 +5,26 @@
 using namespace std;
 struct Player {
 	int playerRadius;
-	//location
+	//---------------------location----------------------------//
+	//player posistion
 	int XposPlayer; 
 	int YposPlayer;
 	int XLoaction;
 	int YLoaction; 
+	//weapon Pos
+	float XposWeapon;
+	float YposWeapon; 
+
 	//controls
 	bool up;
 	bool down;
 	bool left;
 	bool right;
 	bool playerHit;
+	//bounce is the trigger to pull the weapon back
 	int bounce;
 	int playerScore;
+	float newLocX, newLocY;// give force
 };
 class ofApp : public ofBaseApp{
 
@@ -44,13 +51,10 @@ class ofApp : public ofBaseApp{
 		void updateArduino();
 		// will only be false when the code first runs the arduino
 		bool bSetupArduino;
-		
 		//variables for game
-		float XposWeapon1;
-		float YposWeapon1; 
-		// weapon player 1 position
-		float XposWeapon2;
-		float YposWeapon2;
+		//radius weapon
+		float WeaponRadius;
+
 		float retreat; //distance of the pullback
 		int Hitvalue1; //the variable that counts up when hit by the weapon
 		int Hitvalue2;//the variable that counts up when hit by the weapon
@@ -59,10 +63,10 @@ class ofApp : public ofBaseApp{
 		//discance between the weapon and the player
 		float Yspeed1, Yspeed2;
 		float Xspeed1, Xspeed2;
-
+	
 		float Weapon1SpeedX, Weapon2SpeedX; 
 		float Weapon1SpeedY, Weapon2SpeedY;
-		float WeaponRadius; // radius of the weapon
+		
 		//images
 		ofImage weapon;
 		ofImage player1;
