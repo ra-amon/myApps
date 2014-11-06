@@ -175,6 +175,7 @@ void ofApp::draw(){
 
 
 	   for(int i=0; i<players.size(); i++){
+		   ofSetColor(255);
 		   //lines connecting the players to the weapon
 	ofLine(players[1].XposPlayer,players[1].YposPlayer,players[1].XposWeapon,players[1].YposWeapon);
 	ofLine(players[2].XposPlayer,players[2].YposPlayer,players[2].XposWeapon,players[2].YposWeapon);
