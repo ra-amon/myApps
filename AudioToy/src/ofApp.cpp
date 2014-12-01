@@ -5,26 +5,26 @@
 //--------------------------------------------------------------
 void ofApp::setup(){
 	//makes audio go out of openframeworks
-	//ofSoundStreamSetup(2,0,this,44100,256,4);
+	ofSoundStreamSetup(2,0,this,44100,256,4);
 
-	////these will be the nods and we name them.
-	//ControlGenerator midiNote= 
-	//	synth.addParameter("midiNumber");
-	////convert a midi note to a frequincy
-	//ControlGenerator noteFreq = ControlMidiToFreq().input(midiNote);
-	//
-	//Generator tone = SawtoothWave().freq(noteFreq);
-	////create a tone
-	//tone= LPF12().input(tone).Q(2).cutoff((noteFreq*2) +SineWave().freq(3) *0.5* noteFreq);
+	//these will be the nods and we name them.
+	ControlGenerator midiNote= 
+		synth.addParameter("midiNumber");
+	//convert a midi note to a frequincy
+	ControlGenerator noteFreq = ControlMidiToFreq().input(midiNote);
+	
+	Generator tone = SawtoothWave().freq(noteFreq);
+	//create a tone
+	tone= LPF12().input(tone).Q(2).cutoff((noteFreq*2) +SineWave().freq(3) *0.5* noteFreq);
 
-	////trigger
-	//ControlGenerator envelopeTrigger = synth.addParameter("trigger");
-	//Generator toneWithEnvelope =  tone * ADSR().attack(0.01).decay(1.5).sustain(0).release(0).trigger(envelopeTrigger).legato(true);
+	//trigger
+	ControlGenerator envelopeTrigger = synth.addParameter("trigger");
+	Generator toneWithEnvelope =  tone * ADSR().attack(0.01).decay(1.5).sustain(0).release(0).trigger(envelopeTrigger).legato(true);
 
-	//Generator toneWithDelay= StereoDelay(0.5,.7).input(toneWithEnvelope).wetLevel(0.1).feedback(0.2);
-	//synth.setOutputGen(toneWithDelay);
+	Generator toneWithDelay= StereoDelay(0.5,.7).input(toneWithEnvelope).wetLevel(0.1).feedback(0.2);
+	synth.setOutputGen(toneWithDelay);
 
-	//arduino bit
+//	arduino bit
 	ard.connect("COM4", 57600);
 	ofAddListener(ard.EInitialized, this, &ofApp::setupArd);
 	

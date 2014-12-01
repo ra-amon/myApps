@@ -33,6 +33,7 @@ class ofApp : public ofBaseApp{
 		
 		int counter;
 		int check;
-		float Rightvolt, Leftvolt,Right, Left; 
+		float Rightvolt, Leftvolt;
+		int Right, Left; 
 
 };
