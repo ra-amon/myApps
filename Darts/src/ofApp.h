@@ -3,6 +3,8 @@
 #include "ofMain.h"
 #include <iostream>
 
+
+
 class ofApp : public ofBaseApp{
 
 	public:
@@ -31,9 +33,22 @@ class ofApp : public ofBaseApp{
 		//an arduino object
 		ofArduino myArduino;
 		
+		//veriabels for the ir sensor
 		int counter;
 		int check;
 		float Rightvolt, Leftvolt;
 		int Right, Left; 
+		float distanceRight;
+		float distanceLeft;
+		int time;
+		//gamestate
+		bool GameStart;
 
+		//font
+		ofTrueTypeFont Font;
+		//target
+		ofImage target;
+		//sound
+		ofSoundPlayer backgroundSound;
+		
 };

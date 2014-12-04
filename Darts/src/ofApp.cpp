@@ -1,69 +1,115 @@
 #include "ofApp.h"
-float distanceRight;
-float distanceLeft;
-float diraction;
+float x,y;
+
+//the target where you have to go.
+ofPoint Target;
+
+//points and balls
+int points;
+int maxPoints= 40;
+//rect Size
+int rectSize;
 
 
-class Rect_2{ 
-	public:
-	ofPoint pos;
-	ofPoint posa;
-	ofPoint posb;
-	float shaper;
-	float pct;
+class Mover{
+public:
+	ofPoint location;
+	ofPoint velocity;
+	ofPoint accel;
+	ofPoint Hands;
+	ofPoint dir;
+	//hitsound
+	ofSoundPlayer hitsound;
 
-	Rect_2(){
-	shaper = 1.0;
+	float maxspeed;
+	Mover(){
+		//hitsound
+		hitsound.loadSound("HitSound.wav");
+		maxspeed= ofRandom(1,2); //maxspeed and different for aal circles
+		accel = ofPoint(-.001, .01);
+		location = ofPoint(ofRandom(ofGetWidth()), ofRandom(ofGetHeight()));  //random start of the circle
+		velocity = ofPoint(ofRandom(-2.0,2.0), ofRandom(-2.0,2.0)); // random speed
+
+		ofSetColor(100, ofRandom(255),100);
 	}
+	void update(){
 
-	void interp(float myPct){
-	pct = powf(myPct,shaper);
+		Hands= ofPoint(x,y); //location of the hands in the air  ( ir sensors)
+		dir= ofPoint(Hands - location); 
+
+		dir.normalize();
+		dir *=0.01;
+		accel= dir;
+
+		velocity += accel; //speed
+		location += velocity; // where is + the movement speed
+		velocity.limit(maxspeed); //verctor doesnt get bigger then 3
+
+		//collision target
+		if(ofDist(Target.x,Target.y, location.x, location.y)<rectSize){
+			points ++;
+			Target=ofPoint(ofRandom(20,ofGetWidth()-20), ofRandom(20,ofGetHeight()-20));
+			hitsound.play();
+		}
+
+	}
+	//draw the circles
+	void display(){
+		ofFill();
+		ofSetColor(255,10,50);
+		ofCircle(location, 10);
+	}
+	// makes sure the balls wont fly out
+	void checkEdges(){
+		if(location.x > ofGetWidth()){
+			velocity.x *=-1;
+		}
+		if(location.y > ofGetHeight()){
+			velocity.y *=-1;
+		}
+		if(location.x <1 ){
+			velocity.x *=-1;
+		}
+		if(location.y<0){
+			velocity.y *=-1;
+		}
+	}
 	
-
-
-	
-
-	
-	if(pct < 0.5){
-	pos.x = (1-pct)* posa.x + (pct) * posb.x;
-	pos.y = (1-pct)* posa.y + (pct)* posb.y;
-	}else{
-	pos.x = (1-pct)* posa.x + (pct) * posb.x;
-	pos.y = (1-pct)* posb.y + (pct)* posa.y;
-	}
-
-	}
-	void draw(){
-		ofColor(0,0,255);
-	ofSetRectMode(OF_RECTMODE_CENTER);
-	ofRect(pos.x,pos.y, 20,20);
-	}
 };
-Rect_2 myRect; 
-float pct;
-bool returnRect;
 
+vector<Mover> player;
 
 
 //--------------------------------------------------------------
 void ofApp::setup(){
+	//gamestate
+	GameStart=true;
+	//font
+	Font.loadFont("Comenia Sans.otf", 18);
+	//image
+	target.loadImage("target.jpg");
+	//sound
+	
+	backgroundSound.loadSound("background.mp3");
+	backgroundSound.setLoop(true);
 
+	//setup Balls;
+	for(int i=0; i<maxPoints; i++){
+		Mover *c = new Mover();
+		player.push_back(*c);
+	}
+
+	//background
 	ofBackground(30,30,30);
-	diraction=0.0005;
-	myRect.posa.x=10;
-	myRect.posa.y= 300;
-
-	myRect.shaper = 0.2;
-	myRect.interp(0);
-	pct =0;
-	returnRect=true;
-
-
 	ofSetBackgroundColor(255);
 
+	//points
+	points=0;
 
+	//rect size
+	rectSize=40;
 
-
+	//set color;
 	ofSetColor(255);
 	ofSetVerticalSync(true);
 	ofSetCircleResolution(200);
@@ -74,6 +120,12 @@ void ofApp::setup(){
 	//to see if the arduino has been setup.
 	bSetupArduino = false;
 	counter = 500;
+
+	//target location
+	Target=ofPoint(ofRandom(20,ofGetWidth()-20), ofRandom(20,ofGetHeight()-20));
+
+	//playsound
+	backgroundSound.play();
 	
 }
 
@@ -81,7 +133,7 @@ void ofApp::setup(){
 
 //--------------------------------------------------------------
 void ofApp::update(){
-	
+
 			if(myArduino.isArduinoReady()){
 		//when bsetupArduino is false it will run the setupArdiono to define the in and output of the arduiono
 		if(bSetupArduino==false){
@@ -92,6 +144,8 @@ void ofApp::update(){
 		//2nd run the update
 		updateArduino();
 	}
+			
+	if(GameStart==true){
 	check= ofGetElapsedTimeMillis();
 		if(check>=counter){
 			distanceRight=myArduino.getAnalog(0); //analog pin A0
@@ -103,35 +157,43 @@ void ofApp::update(){
 			Left=(21.61/(Leftvolt-0.1696))*1000;
 			counter=check+500; 
 		}
-		if(Right>50){
-			Right=50;
-		}
-		if(Left>50){
-			Left=50;
-		}
-		if(Right<8){
-			Right=8;
-		}
-		if(Left<8){
-			Left=7;
-			}
 
-		myRect.posb.x=ofMap(Right,8,50,0,ofGetWidth());
-	myRect.posb.y=ofMap(Left,8,50,0,ofGetHeight());
-		cout << distanceRight << endl;
-	pct += diraction;
-	
+		//map the variables of the ir sensor to the width and hight of the screen.
+		x=ofMap(Right,8,30,ofGetWidth(),0);
+		y=ofMap(Left,8,30,ofGetHeight(),0);
 
-	if(pct>1) {
-		pct=0;
-		myRect.posa.x=myRect.posb.x;
-		myRect.posa.y= myRect.posb.y;
-
+		// if the value of the sensors is higher then 50 set player in center of the screen.
+	if(Right>30){
+		x=ofGetWidth()/2;
+	}
+	if(Left>30){
+		y=ofGetHeight()/2;
 	}
 
+	//make target smaller;
+	for(int i=0; i<points; i++){
+		rectSize= 40 - i*2;
+	}
+	
 
-	myRect.interp(pct);
+	//player code
+	for(int i=0; i<1+points; i++){
+	player[i].update();
+	player[i].checkEdges();
+	}
 
+	if(rectSize<1){
+		GameStart=false;
+		time=check;
+	}
+
+	
+	}else{
+		
+		rectSize=40;
+	
+	}
+	cout<<check/1000<< endl;
 
 
 }
@@ -150,10 +212,24 @@ void ofApp::setupArduino(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-	ofSetBackgroundColor(255);
-	myRect.draw();
 
+	if(GameStart==true){
 
+	ofBackground(0,0,0);
+	for(int i=0; i<1+points; i++){
+	player[i].display();
+	}
+	ofSetColor(255);
+	target.draw(Target.x-rectSize/2,Target.y-rectSize/2 ,rectSize,rectSize);
+		
+	}
+	else{
+		ofSetColor(235,235,220);
+		ofBackground(0,0,0);
+		//text for the end of the game
+		Font.drawString("Score Player 1 : "+ofToString(time/1000) ,200,200);;
+		Font.drawString("\nGame over! Press any Space to restart", 200,220);
+	}
 }
 
 //--------------------------------------------------------------
@@ -164,6 +240,9 @@ void ofApp::keyPressed(int key){
 //--------------------------------------------------------------
 void ofApp::keyReleased(int key){
 
+	//reset game
+		GameStart=true;
+		points = 0;
 }
 
 //--------------------------------------------------------------
